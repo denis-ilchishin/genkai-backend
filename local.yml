@@ -1,0 +1,57 @@
+version: "3.8"
+
+volumes:
+  pg_data:
+  vscode-api:
+
+x-backend-clear: &backend-clear
+  ports: []
+  labels: []
+
+services:
+  db:
+    build:
+      context: .
+      dockerfile: ./compose/postgres/Dockerfile
+      args:
+        DUMPS_DIR: /root/dumps
+    env_file: ./compose/postgres/.env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+
+  redis:
+    build:
+      context: .
+      dockerfile: ./compose/redis/Dockerfile
+
+  api: &backend
+    build:
+      context: .
+      dockerfile: ./compose/backend/local/Dockerfile
+    command:
+      - sh
+      - -c
+      - sleep infinity
+    env_file: ./compose/backend/local/.env
+    volumes:
+      - .:/home/container/app
+      - vscode-api:/home/container/.vscode-server
+    ports:
+      - 8000:8000
+      - 8010:8010
+    depends_on:
+      - db
+      - redis
+
+  celery-beat:
+    <<: *backend
+    <<: *backend-clear
+    command:
+      - sh
+      - -c
+      - sh $$ENTRYPOINTS_DIR/celerybeat.sh
+      # - sh
+      # - -c
+      # - sleep infinity

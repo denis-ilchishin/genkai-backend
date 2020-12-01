@@ -1,0 +1,76 @@
+version: "3.8"
+
+volumes:
+  pg_data:
+  redis_data:
+
+x-default-opts: &default-opts
+  image: ${COMPOSE_PROJECT_NAME}_backend
+  restart: unless-stopped
+  env_file: ./compose/backend/prod/.env
+  volumes:
+    - ./volumes/backend/static/:/home/container/app/src/static/
+    - ./volumes/backend/uploads/:/home/container/app/src/uploads/
+    - ./volumes/backend/logs/:/home/container/app/src/logs/
+    - ./volumes/backend/gunicorn/:/home/container/app/src/gunicorn/
+  depends_on:
+    - db
+    - redis
+  ports: []
+  labels: []
+
+services:
+  db:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./compose/postgres/Dockerfile
+      args:
+        DUMPS_DIR: /root/dumps
+    env_file: ./compose/postgres/.env
+    environment:
+      DUMPS_DIR: /root/dumps
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./volumes/db_dumps/:/root/dumps
+  redis:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./compose/redis/Dockerfile
+    volumes:
+      - redis_data:/data
+
+  api:
+    <<: *default-opts
+    build:
+      context: .
+      dockerfile: ./compose/backend/prod/Dockerfile
+    command:
+      - sh
+      - -c
+      - sh $$ENTRYPOINTS_DIR/gunicorn_api.sh
+
+  admin:
+    <<: *default-opts
+    environment:
+      DJANGO_DEBUG: "true"
+      DJANGO_APPLICATION: "admin"
+    command:
+      - sh
+      - -c
+      - sh $$ENTRYPOINTS_DIR/gunicorn_admin.sh
+
+  celery-worker:
+    <<: *default-opts
+    command:
+      - sh
+      - -c
+      - sh $$ENTRYPOINTS_DIR/celeryworker.sh
+
+  celery-beat:
+    <<: *default-opts
+    command:
+      - sh
+      - -c
+      - sh $$ENTRYPOINTS_DIR/celerybeat.sh

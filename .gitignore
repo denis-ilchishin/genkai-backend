@@ -1,0 +1,10 @@
+volumes/backend/gunicorn/*
+volumes/backend/static/*
+volumes/backend/logs/*
+volumes/backend/uploads/*
+
+volumes/db_dumps/*
+
+.devcontainer
+
+.env

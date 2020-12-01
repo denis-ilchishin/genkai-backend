@@ -1,0 +1,13 @@
+{
+  "editor.tabSize": 4,
+  "python.formatting.blackArgs": [
+    "--skip-string-normalization",
+  ],
+  "python.formatting.provider": "black",
+  "python.pythonPath": "/usr/local/bin/python",
+  "python.languageServer": "Pylance",
+  "python.linting.pylintArgs": [
+    "--disable=C0111", // missing docstring,
+    "--load-plugins=pylint_django"
+  ],
+}
